@@ -133,6 +133,9 @@ python train.py --config=yolact_base_config --batch_size=5
 # Resume training yolact_base with a specific weight file and start from the iteration specified in the weight file's name.
 python train.py --config=yolact_base_config --resume=weights/yolact_base_10_32100.pth --start_iter=-1
 
+# Resume training model NKBVS with parameters that I used.
+python train.py --config=yolact_NKBVS_config --dataset=NKBVS_dataset --batch_size=8 --keep_latest --resume=weights/yolact_resnet50_4220_848421.pth --start_iter=-1 --save_folder=weights/ --log_folder=weights
+
 # Use the help option to see a description of all available command line arguments
 python train.py --help
 ```
