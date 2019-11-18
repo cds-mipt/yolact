@@ -998,8 +998,9 @@ def evaluate(net:Yolact, dataset, train_mode=False):
 def calc_map(ap_data):
     print('Calculating mAP...')
     aps = [{'box': [], 'mask': []} for _ in iou_thresholds]
-
-    for _class in range(len(cfg.dataset.class_names)):
+    # range(len(cfg.dataset.class_names))
+    list_of_categories = [0,2,9,11]
+    for _class in list_of_categories:
         for iou_idx in range(len(iou_thresholds)):
             for iou_type in ('box', 'mask'):
                 ap_obj = ap_data[iou_type][iou_idx][_class]
