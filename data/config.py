@@ -30,7 +30,7 @@ STD   = (57.38, 57.12, 58.40)
 
 COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
                 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-                'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+                'stop sign', 'parking meter', 'bench', 'animal', 'cat', 'dog',
                 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
                 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
                 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
@@ -170,6 +170,51 @@ pascal_sbd_dataset = dataset_base.copy({
     'valid_info': './data/sbd/pascal_sbd_val.json',
 
     'class_names': PASCAL_CLASSES,
+})
+
+COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+                'road sign', 'parking meter', 'bench', 'animal', 'cat', 'dog',
+                'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
+                'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+                'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+                'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+                'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+                'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+                'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+                'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
+                'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven',
+                'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
+                'scissors', 'teddy bear', 'hair drier', 'toothbrush')
+
+COCO_LABEL_MAP = { 1:  1,  2:  2,  3:  3,  4:  4,  5:  5,  6:  6,  7:  7,  8:  8,
+                   9:  9, 10: 10, 11: 11, 13: 12, 14: 13, 15: 14, 16: 15, 17: 16,
+                  18: 17, 19: 18, 20: 19, 21: 20, 22: 21, 23: 22, 24: 23, 25: 24,
+                  27: 25, 28: 26, 31: 27, 32: 28, 33: 29, 34: 30, 35: 31, 36: 32,
+                  37: 33, 38: 34, 39: 35, 40: 36, 41: 37, 42: 38, 43: 39, 44: 40,
+                  46: 41, 47: 42, 48: 43, 49: 44, 50: 45, 51: 46, 52: 47, 53: 48,
+                  54: 49, 55: 50, 56: 51, 57: 52, 58: 53, 59: 54, 60: 55, 61: 56,
+                  62: 57, 63: 58, 64: 59, 65: 60, 67: 61, 70: 62, 72: 63, 73: 64,
+                  74: 65, 75: 66, 76: 67, 77: 68, 78: 69, 79: 70, 80: 71, 81: 72,
+                  82: 73, 84: 74, 85: 75, 86: 76, 87: 77, 88: 78, 89: 79, 90: 80}
+
+NKBVS_CLASSES = ('person', 'car', 'traffic light', 'road sign', 'truck', 'train', 'bus')
+
+NKBVS_LABEL_MAP = { 1:1,  3:2, 10:3,  13:4, 8:5, 7:6, 6:7}
+
+NKBVS_dataset = dataset_base.copy({
+    'name': 'NKBVS_dataset',
+
+    'train_images': './data/dataset_augmentated/train_set',
+    'valid_images': './data/dataset_augmentated/test_set',
+    
+    'train_info': './data/dataset_augmentated/train_set.json',
+    'valid_info': './data/dataset_augmentated/test_set.json',
+
+    'class_names': COCO_CLASSES,
+    'num_classes': len(COCO_CLASSES) + 1,
+
+    'label_map': COCO_LABEL_MAP
 })
 
 
@@ -423,7 +468,7 @@ coco_base_config = Config({
     'lr_steps': (280000, 360000, 400000),
 
     # Initial learning rate to linearly warmup from (if until > 0)
-    'lr_warmup_init': 1e-4,
+    'lr_warmup_init': 1e-8,
 
     # If > 0 then increase the lr linearly from warmup_init to lr each iter for until iters
     'lr_warmup_until': 500,
@@ -591,7 +636,7 @@ coco_base_config = Config({
     # Whether or not to preserve aspect ratio when resizing the image.
     # If True, this will resize all images to be max_size^2 pixels in area while keeping aspect ratio.
     # If False, all images are resized to max_size x max_size
-    'preserve_aspect_ratio': False,
+    'preserve_aspect_ratio': True,
 
     # Whether or not to use the prediction module (c) from DSSD
     'use_prediction_module': False,
@@ -628,13 +673,14 @@ yolact_base_config = coco_base_config.copy({
     # Dataset stuff
     'dataset': coco2017_dataset,
     'num_classes': len(coco2017_dataset.class_names) + 1,
+    'class_names': COCO_CLASSES,
 
     # Image Size
     'max_size': 550,
     
     # Training params
     'lr_steps': (280000, 600000, 700000, 750000),
-    'max_iter': 800000,
+    'max_iter': 1000000,
     
     # Backbone Settings
     'backbone': resnet101_backbone.copy({
@@ -707,6 +753,8 @@ yolact_darknet53_config = yolact_base_config.copy({
 
 yolact_resnet50_config = yolact_base_config.copy({
     'name': 'yolact_resnet50',
+    'num_classes': len(COCO_CLASSES) + 1,
+    'preserve_aspect_ratio': True,
 
     'backbone': resnet50_backbone.copy({
         'selected_layers': list(range(1, 4)),
@@ -719,6 +767,36 @@ yolact_resnet50_config = yolact_base_config.copy({
     }),
 })
 
+yolact_NKBVS_config = yolact_base_config.copy({
+    'name': 'yolact_resnet50',
+    'dataset': NKBVS_dataset,
+    'num_classes': len(COCO_CLASSES) + 1,
+    'max_iter': 5000000,
+    'max_size': 495,
+    'preserve_aspect_ratio': True,
+
+    'lr_warmup_until': 300+800000,
+    'lr_warmup_init': 1e-8,
+
+    # dw' = momentum * dw - lr * (grad + decay * w)
+    'lr': 1e-3,
+    'momentum': 0.9,
+    'decay': 5e-4,
+
+    # For each lr step, what to multiply the lr with
+    'gamma': 1,
+    'lr_steps': tuple([2000+800000]),  
+
+    'backbone': resnet50_backbone.copy({
+        'selected_layers': list(range(1, 4)),
+        
+        'pred_scales': [[int(x[0] / yolact_base_config.max_size * 495)] for x in yolact_base_config.backbone.pred_scales],
+        'pred_aspect_ratios': yolact_base_config.backbone.pred_aspect_ratios,
+        'use_pixel_scales': True,
+        'preapply_sqrt': False,
+        'use_square_anchors': True, # This is for backward compatability with a bug
+    }),
+})
 
 yolact_resnet50_pascal_config = yolact_resnet50_config.copy({
     'name': None, # Will default to yolact_resnet50_pascal
@@ -736,14 +814,12 @@ yolact_resnet50_pascal_config = yolact_resnet50_config.copy({
     })
 })
 
-
 # Default config
 cfg = yolact_base_config.copy()
 
 def set_cfg(config_name:str):
     """ Sets the active config. Works even if cfg is already imported! """
     global cfg
-
     # Note this is not just an eval because I'm lazy, but also because it can
     # be used like ssd300_config.copy({'max_size': 400}) for extreme fine-tuning
     cfg.replace(eval(config_name))
