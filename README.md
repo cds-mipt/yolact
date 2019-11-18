@@ -56,7 +56,7 @@ As of April 5th, 2019 here are our latest models along with their FPS on a Titan
 | 550        | Darknet53-FPN | 40.0 | 28.7 | [yolact_darknet53_54_800000.pth](https://drive.google.com/file/d/1dukLrTzZQEuhzitGkHaGjphlmRJOjVnP/view?usp=sharing) | [Mirror](https://ucdavis365-my.sharepoint.com/:u:/g/personal/yongjaelee_ucdavis_edu/ERrao26c8llJn25dIyZPhwMBxUp2GdZTKIMUQA3t0djHLw)
 | 550        | Resnet101-FPN | 33.0 | 29.8 | [yolact_base_54_800000.pth](https://drive.google.com/file/d/1UYy3dMapbH1BnmtZU4WH1zbYgOzzHHf_/view?usp=sharing)      | [Mirror](https://ucdavis365-my.sharepoint.com/:u:/g/personal/yongjaelee_ucdavis_edu/EYRWxBEoKU9DiblrWx2M89MBGFkVVB_drlRd_v5sdT3Hgg)
 | 700        | Resnet101-FPN | 23.6 | 31.2 | [yolact_im700_54_800000.pth](https://drive.google.com/file/d/1lE4Lz5p25teiXV-6HdTiOJSnS7u7GBzg/view?usp=sharing)     | [Mirror](https://ucdavis365-my.sharepoint.com/:u:/g/personal/yongjaelee_ucdavis_edu/Eagg5RSc5hFEhp7sPtvLNyoBjhlf2feog7t8OQzHKKphjw)
-| 640x384    | Resnet50-FPN  |      | 27   | [yolact_NKBVS_4220_848421.pth](https://drive.google.com/drive/folders/1jG4T3o-jvKNFDE3iFTnz7viCG48H_3nY?usp=sharing)
+| 640x384    | Resnet50-FPN  |  52  | 27   | [yolact_NKBVS_4220_848421.pth](https://drive.google.com/drive/folders/1jG4T3o-jvKNFDE3iFTnz7viCG48H_3nY?usp=sharing)
 
 To evalute the model, put the corresponding weights file in the `./weights` directory and run one of the following commands.
 ## Quantitative Results on COCO
