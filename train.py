@@ -56,11 +56,11 @@ parser.add_argument('--log_folder', default='logs/',
                     help='Directory for saving logs.')
 parser.add_argument('--config', default=None,
                     help='The config object to use.')
-parser.add_argument('--save_interval', default=10000, type=int,
+parser.add_argument('--save_interval', default=50,type=int,
                     help='The number of iterations between saving the model.')
-parser.add_argument('--validation_size', default=5000, type=int,
+parser.add_argument('--validation_size', default=10000,type=int,
                     help='The number of images to use for validation.')
-parser.add_argument('--validation_epoch', default=2, type=int,
+parser.add_argument('--validation_epochs', default=4, type=int,
                     help='Output validation information every n iterations. If -1, do no validation.')
 parser.add_argument('--keep_latest', dest='keep_latest', action='store_true',
                     help='Only keep the latest checkpoint instead of each one.')
@@ -174,17 +174,18 @@ def train():
                             info_file=cfg.dataset.train_info,
                             transform=SSDAugmentation(MEANS))
     
-    if args.validation_epoch > 0:
+    if args.validation_epochs > 0:
         setup_eval()
         val_dataset = COCODetection(image_path=cfg.dataset.valid_images,
                                     info_file=cfg.dataset.valid_info,
                                     transform=BaseTransform(MEANS))
 
+    filename_log = args.log_folder+cfg.name+'.log'        
+    AP_best = 0
     # Parallel wraps the underlying module, but when saving and loading we don't want that
     yolact_net = Yolact()
     net = yolact_net
     net.train()
-
     if args.log:
         log = Log(cfg.name, args.log_folder, dict(args._get_kwargs()),
             overwrite=(args.resume is None), log_gpu_stats=args.log_gpu)
@@ -240,6 +241,8 @@ def train():
     epoch_size = len(dataset) // args.batch_size
     num_epochs = math.ceil(cfg.max_iter / epoch_size)
     
+    best_AP = 0
+    
     # Which learning rate adjustment step are we on? lr' = lr * gamma ^ step_index
     step_index = 0
 
@@ -261,6 +264,7 @@ def train():
     try:
         for epoch in range(num_epochs):
             # Resume from start_iter
+            compute_validation_map(epoch, iteration, yolact_net, val_dataset, None)
             if (epoch+1)*epoch_size < iteration:
                 continue
             
@@ -302,10 +306,8 @@ def train():
 
                 # Forward Pass + Compute loss at the same time (see CustomDataParallel and NetLoss)
                 losses = net(datum)
-                
                 losses = { k: (v).mean() for k,v in losses.items() } # Mean here because Dataparallel
                 loss = sum([losses[k] for k in losses])
-                
                 # no_inf_mean removes some components from the loss, so make sure to backward through all of it
                 # all_loss = sum([v.mean() for v in losses.values()])
 
@@ -338,7 +340,7 @@ def train():
                 if args.log:
                     precision = 5
                     loss_info = {k: round(losses[k].item(), precision) for k in losses}
-                    loss_info['T'] = round(losses[k].item(), precision)
+                    loss_info['T'] = sum([round(losses[k].item(), precision) for k in losses])
 
                     if args.log_gpu:
                         log.log_gpu_stats = (iteration % 10 == 0) # nvidia-smi is sloooow
@@ -349,23 +351,41 @@ def train():
                     log.log_gpu_stats = args.log_gpu
                 
                 iteration += 1
+#                 if iteration % args.save_interval == 0 and iteration != args.start_iter:
+#                     if args.keep_latest:
+#                         latest = SavePath.get_latest(args.save_folder, cfg.name)
 
-                if iteration % args.save_interval == 0 and iteration != args.start_iter:
-                    if args.keep_latest:
-                        latest = SavePath.get_latest(args.save_folder, cfg.name)
+#                     print('Saving state, iter:', iteration)
+#                     yolact_net.save_weights(save_path(epoch, iteration))
 
-                    print('Saving state, iter:', iteration)
-                    yolact_net.save_weights(save_path(epoch, iteration))
-
-                    if args.keep_latest and latest is not None:
-                        if args.keep_latest_interval <= 0 or iteration % args.keep_latest_interval != args.save_interval:
-                            print('Deleting old save...')
-                            os.remove(latest)
-            
-            # This is done per epoch
-            if args.validation_epoch > 0:
-                if epoch % args.validation_epoch == 0 and epoch > 0:
+#                     if args.keep_latest and latest is not None:
+#                         if args.keep_latest_interval <= 0 or iteration % args.keep_latest_interval != args.save_interval:
+#                             print('Deleting old save...')
+#                             os.remove(latest)
+                # This is done per epoch
+            if args.validation_epochs > 0:
+                if epoch % args.validation_epochs == 0 and epoch > 0:
                     compute_validation_map(epoch, iteration, yolact_net, val_dataset, log if args.log else None)
+                    with open(filename_log) as f:
+                        f = f.readlines()
+                    record = f[-1]
+                    record = record.replace('true','True')
+                    record = record.replace('null','None')
+                    record = record.replace('NaN','None')
+                    record = record.replace('false','False')
+                    record = record.replace('Infinity', 'np.inf')
+                    record_dict = eval(record)
+                    AP = record_dict['data']['box']['50']
+                    if AP_best < AP:
+                        AP_best = AP
+                        if args.keep_latest:
+                            latest = SavePath.get_latest(args.save_folder, cfg.name)
+                        print('Saving state, iter:', iteration)
+                        yolact_net.save_weights(save_path(epoch, iteration))
+                        if args.keep_latest and latest is not None:
+                            if args.keep_latest_interval <= 0 or iteration % args.keep_latest_interval != args.save_interval:
+                                print('Deleting old save...')
+                                os.remove(latest)
         
         # Compute validation mAP after training is finished
         compute_validation_map(epoch, iteration, yolact_net, val_dataset, log if args.log else None)
@@ -491,9 +511,11 @@ def compute_validation_map(epoch, iteration, yolact_net, dataset, log:Log=None):
 
         if log is not None:
             log.log('val', val_info, elapsed=(end - start), epoch=epoch, iter=iteration)
-
+            
         yolact_net.train()
+    return 1
 
+        
 def setup_eval():
     eval_script.parse_args(['--no_bar', '--max_images='+str(args.validation_size)])
 

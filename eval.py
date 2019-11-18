@@ -25,6 +25,7 @@ from collections import defaultdict
 from pathlib import Path
 from collections import OrderedDict
 from PIL import Image
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import cv2
@@ -132,7 +133,7 @@ coco_cats = {} # Call prep_coco_cats to fill this
 coco_cats_inv = {}
 color_cache = defaultdict(lambda: {})
 
-def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, mask_alpha=0.45, fps_str=''):
+def prep_display(dets_out, img, h, w, undo_transform=True, class_color=True, mask_alpha=0.45, fps_str=''):
     """
     Note: If undo_transform=False then im_h and im_w are allowed to be None.
     """
@@ -154,7 +155,6 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
             # Masks are drawn on the GPU, so don't copy
             masks = t[3][:args.top_k]
         classes, scores, boxes = [x[:args.top_k].cpu().numpy() for x in t[:3]]
-
     num_dets_to_consider = min(args.top_k, classes.shape[0])
     for j in range(num_dets_to_consider):
         if scores[j] < args.score_threshold:
@@ -166,6 +166,7 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
     def get_color(j, on_gpu=None):
         global color_cache
         color_idx = (classes[j] * 5 if class_color else j * 5) % len(COLORS)
+        #color_idx = classes[j]
         
         if on_gpu is not None and color_idx in color_cache[on_gpu]:
             return color_cache[on_gpu][color_idx]
@@ -568,9 +569,23 @@ def badhash(x):
     return x
 
 def evalimage(net:Yolact, path:str, save_path:str=None):
-    frame = torch.from_numpy(cv2.imread(path)).cuda().float()
+    global total_time
+    global total_time_preprocessing
+    global total_time_imreading
+    global total_time_without_imreading
+    begin_time_total = time.time()
+    begin_time_imreading = time.time()
+    img = cv2.imread(path)
+    begin_time_without_imreading = time.time()
+    total_time_imreading += (time.time()-begin_time_imreading)
+    img_crop = img[:,58:-58]
+    frame = torch.from_numpy(img_crop).cuda().float()
+    begin_time_preprocessing = time.time()
     batch = FastBaseTransform()(frame.unsqueeze(0))
+    total_time_preprocessing += (time.time() - begin_time_preprocessing)
     preds = net(batch)
+    total_time += (time.time() - begin_time_total)
+    total_time_without_imreading += (time.time() - begin_time_without_imreading)
 
     img_numpy = prep_display(preds, frame, None, None, undo_transform=False)
     
@@ -585,18 +600,30 @@ def evalimage(net:Yolact, path:str, save_path:str=None):
         cv2.imwrite(save_path, img_numpy)
 
 def evalimages(net:Yolact, input_folder:str, output_folder:str):
+    global total_time
+    global total_time_preprocessing
+    global total_time_imreading
+    global total_time_without_imreading
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
     print()
-    for p in Path(input_folder).glob('*'): 
+    total_time = 0
+    total_time_preprocessing = 0
+    total_time_imreading = 0
+    total_time_without_imreading = 0
+    for p in tqdm(Path(input_folder).glob('*')): 
         path = str(p)
         name = os.path.basename(path)
         name = '.'.join(name.split('.')[:-1]) + '.png'
         out_path = os.path.join(output_folder, name)
 
         evalimage(net, path, out_path)
-        print(path + ' -> ' + out_path)
+        #print(path + ' -> ' + out_path)
+    print('total time imreading = '+str(total_time_imreading))
+    print('total time preprocessing = '+str(total_time_preprocessing))
+    print('total time = '+str(total_time))
+    print('begin_time_without_imreading = '+str(len(os.listdir(input_folder))/total_time_without_imreading) )
     print('Done.')
 
 from multiprocessing.pool import ThreadPool
