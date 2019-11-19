@@ -17,12 +17,6 @@ Read [the changelog](CHANGELOG.md) for details on, well, what changed. Oh, and t
 
 Some examples from our base model (33.5 fps on a Titan Xp and 29.8 mAP on COCO's `test-dev`):
 
-![Example 0](data/yolact_example_0.png)
-
-![Example 1](data/yolact_example_1.png)
-
-![Example 2](data/yolact_example_2.png)
-
 # Installation
  - Set up a Python3 environment.
  - Install [Pytorch](http://pytorch.org/) 1.0.1 (or higher) and TorchVision.
