@@ -8,7 +8,7 @@
        ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝   ╚═╝ 
 ```
 
-Инструкция по пользованию YOLACT - https://docs.google.com/document/d/1AbopvMys6e2nu5Ce-E6ZX6megfvvPyPyzskajE7xP80/edit?usp=sharing
+Инструкция по пользованию YOLACT - https://docs.google.com/document/d/1ZKiI6t_8qENlaboWA6Ezu5xaaWbNssuAb9n81pIvTvo/edit?usp=sharing
 
 A simple, fully convolutional model for real-time instance segmentation. This is the code for [our paper](https://arxiv.org/abs/1904.02689).
 
